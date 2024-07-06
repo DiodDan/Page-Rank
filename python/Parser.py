@@ -3,28 +3,28 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 
-
 def get_wikipedia_links(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
-    links = []
+    links = set()
 
     for a_tag in soup.find_all('a', href=True):
         href = a_tag['href']
-        if href.startswith('/wiki/') and not href.startswith('/wiki/Special:'):
+        if href.startswith('/wiki/') and not href.startswith('/wiki/Special:') and not ':' in href:
             full_url = urljoin(url, href)
-            links.append(full_url)
+            links.add(full_url)
 
     return links
-
 
 def save_html(url, directory):
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
 
+    # Преобразуем URL в допустимое имя файла
     path = urlparse(url).path
-    file_name = path.replace('/wiki/', "").replace('/', '_') + '.html'
+    file_name = path.replace('/wiki/', '').replace('/', '_') + '.html'
 
+    # Создаем директорию, если она не существует
     if not os.path.exists(directory):
         os.makedirs(directory)
 
@@ -34,19 +34,39 @@ def save_html(url, directory):
 
     return file_path
 
+def crawl_wikipedia(start_url, directory, max_depth=5):
+    visited = set()
+    to_visit = {start_url}
+    depth = 0
+
+    while to_visit and depth < max_depth:
+        current_to_visit = to_visit.copy()
+        to_visit.clear()
+
+        for url in current_to_visit:
+            if url in visited:
+                continue
+
+            visited.add(url)
+            print(f'Visiting: {url}')
+            try:
+                file_path = save_html(url, directory)
+                print(f'Saved {url} as {file_path}')
+            except Exception as e:
+                print(f'Error saving {url}: {e}')
+                continue
+
+            links = get_wikipedia_links(url)
+            to_visit.update(links)
+
+        depth += 1
 
 def main():
-    start_url = 'https://en.wikipedia.org/wiki/Main_Page'
+    start_url = 'https://en.wikipedia.org/wiki/Web_scraping'
     directory = 'wikipedia_pages'
+    max_depth = 5
 
-    links = get_wikipedia_links(start_url)
-
-    print(f'Found {len(links)} links')
-
-    for link in links:
-        file_path = save_html(link, directory)
-        print(f'Saved {link} as {file_path}')
-
+    crawl_wikipedia(start_url, directory, max_depth)
 
 if __name__ == '__main__':
     main()
