@@ -10,7 +10,7 @@ void merge(int arr[], int left, int mid, int right) {
     // Create temporary arrays
     vector<int> L(n1);
     vector<int> R(n2);
-
+//Здесь был Егор Силаков
     // Copy data to temporary arrays L[] and R[]
     for (int i = 0; i < n1; i++)
         L[i] = arr[left + i];
