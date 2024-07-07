@@ -29,3 +29,6 @@ Page Runk written on C++ with OpenMP
 ## 4. [Solution condition](#Solution-condition)
 
 ---
+
+
+![img.png](img.png)
