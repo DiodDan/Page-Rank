@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 
+
 def get_wikipedia_links(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
@@ -16,9 +17,11 @@ def get_wikipedia_links(url):
 
     return links
 
+
 def save_html(url, directory):
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
+
 
     # Преобразуем URL в допустимое имя файла
     path = urlparse(url).path
@@ -67,6 +70,7 @@ def main():
     max_depth = 5
 
     crawl_wikipedia(start_url, directory, max_depth)
+
 
 if __name__ == '__main__':
     main()
