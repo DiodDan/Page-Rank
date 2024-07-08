@@ -24,11 +24,11 @@ Page Runk written on C++ with OpenMP
 
 ## 2. [Structure Definitions](#Structure-Definitions)
 
-## 3. [Task Definitions](assets/TaskDefinitions.md)
+## 3. [Task Definition](assets/TaskDefinition.md)
 
 ## 4. [Solution condition](#Solution-condition)
 
 ---
 
 
-![img.png](img.png)
+![img.png](assets/Graph.png)

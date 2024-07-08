@@ -36,7 +36,8 @@ for i in tqdm((Path(__file__).parent / "links.txt").read_text().split("\n")):
         edges.add(target)
         nodes_data += f"{target}{splitter}{target}\n"
 
-    edges_data += f"{source}{splitter}{target}{splitter}{connection_type}{splitter}1\n"
+    if source != target:
+        edges_data += f"{source}{splitter}{target}{splitter}{connection_type}{splitter}1\n"
 
 nodes_path = Path('nodes.csv')
 edges_path = Path('edges.csv')
