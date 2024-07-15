@@ -25,7 +25,7 @@ connection_type = "Directed"
 #                 edges_data += f"{i}{splitter}{connect_page}{splitter}{connection_type}{splitter}{weight}\n"
 
 edges = set()
-for i in tqdm((Path(__file__).parent / "links.txt").read_text().split("\n")):
+for i in tqdm((Path(__file__).parent.parent / "data" / "links.txt").read_text().split("\n")):
     source, target = i.split(" -> ")
     source = source.replace(".html", "")
     target = target.replace(".html", "")
@@ -39,8 +39,8 @@ for i in tqdm((Path(__file__).parent / "links.txt").read_text().split("\n")):
     if source != target:
         edges_data += f"{source}{splitter}{target}{splitter}{connection_type}{splitter}1\n"
 
-nodes_path = Path('nodes.csv')
-edges_path = Path('edges.csv')
+nodes_path = Path(__file__).parent.parent / "data" / "nodes.csv"
+edges_path = Path(__file__).parent.parent / "data" / "edges.csv"
 
 
 nodes_path.write_text(f'Id{splitter}Label\n' + nodes_data)
