@@ -1,92 +1,148 @@
 #include <iostream>
+#include <utility>
 #include <vector>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <map>
+#include <memory>
+
 using namespace std;
 
-// Function to merge two subarrays
-void merge(int arr[], int left, int mid, int right) {
-    int n1 = mid - left + 1;
-    int n2 = right - mid;
 
-    // Create temporary arrays
-    vector<int> L(n1);
-    vector<int> R(n2);
-//Здесь был Егор Силаков
-    // Copy data to temporary arrays L[] and R[]
-    for (int i = 0; i < n1; i++)
-        L[i] = arr[left + i];
+class Node {
+public:
+    string name;
+    long double prev_value;
+    long double real_value;
+    vector<Node *> parents;
+    uint32_t children_number;
 
-    for (int j = 0; j < n2; j++)
-        R[j] = arr[mid + 1 + j];
+    explicit Node(string name) {
+        this->name = std::move(name);
+        this->prev_value = 0;
+        this->real_value = 0;
+        this->children_number = 0;
+    }
 
-    // Merge the temporary arrays back into arr[left...right]
-    int i = 0; // Initial index of first subarray
-    int j = 0; // Initial index of second subarray
-    int k = left; // Initial index of merged subarray
+    void addParent(Node *parent) {
+        this->parents.push_back(parent);
+    }
 
-    while (i < n1 && j < n2) {
-        if (L[i] <= R[j]) {
-            arr[k] = L[i];
-            i++;
+    string getParents() {
+        string parents_names = "";
+        for (int i = 0; i < this->parents.size(); i++) {
+            parents_names += this->parents[i]->name + " ";
         }
-        else {
-            arr[k] = R[j];
-            j++;
+        return parents_names;
+    }
+
+    void setPrevValue(long double value) {
+        this->prev_value = value;
+    }
+
+    void addChild() {
+        this->children_number++;
+    }
+
+    void recalculate() {
+        long double sum = 0;
+        for (auto &parent: this->parents) {
+            sum += parent->prev_value / parent->children_number;
         }
-        k++;
+        this->real_value = sum;
     }
 
-    // Copy the remaining elements of L[], if there are any
-    while (i < n1) {
-        arr[k] = L[i];
-        i++;
-        k++;
+    void step() {
+        this->prev_value = this->real_value;
+        this->real_value = 0;
+    }
+};
+
+vector<string> splitString(const string &str, char delimiter = ' ') {
+    vector<string> tokens;
+    istringstream stream(str);
+    string token;
+
+    while (getline(stream, token, delimiter)) {
+        tokens.push_back(token);
     }
 
-    // Copy the remaining elements of R[], if there are any
-    while (j < n2) {
-        arr[k] = R[j];
-        j++;
-        k++;
-    }
+    return tokens;
 }
 
-// Function to implement merge sort
-void mergeSort(int arr[], int left, int right) {
-    if (left >= right) {
-        return; // Returns recursively
-    }
-    int mid = left + (right - left) / 2;
-    #pragma omp parallel sections
-        {
-            #pragma omp section
-                {
-                    mergeSort(arr, left, mid);
-                }
-            #pragma omp section
-                {
-                    mergeSort(arr, mid + 1, right);
-                }
-        };
-    merge(arr, left, mid, right);
-}
+vector<vector<string>> parseEdgesCSV(const string &filePath) {
+    vector<vector<string>> edges;
+    ifstream file(filePath);
+    string line;
 
-// Function to print an array
-void printArray(int arr[], int size) {
-    for (int i = 0; i < size; i++)
-        cout << arr[i] << " ";
-    cout << endl;
+    if (file.is_open()) {
+        getline(file, line);
+        while (getline(file, line)) {
+            istringstream iss(line);
+            string segment;
+            vector<string> edgePair;
+
+            while (getline(iss, segment, '\n')) {
+                edgePair = splitString(segment, ';');
+                edges.push_back({edgePair[0], edgePair[1]});
+            }
+        }
+        file.close();
+    } else {
+        cerr << "Unable to open file: " << filePath << endl;
+    }
+
+    return edges;
 }
 
 int main() {
-    int arr[] = { 12, 11, 13, 5, 6, 7, 9};
-    int arr_size = sizeof(arr) / sizeof(arr[0]);
+    vector<vector<string>> edges = parseEdgesCSV("../data/test.csv");
 
-    cout << "Given array is \n";
-    printArray(arr, arr_size);
+    std::map<std::string, std::unique_ptr<Node>> nodes;
 
-    mergeSort(arr, 0, arr_size - 1);
+    uint64_t nodes_count = 0;
 
-    cout << "\nSorted array is \n";
-    printArray(arr, arr_size);
+
+    for (auto &edge: edges) {
+        if (nodes.find(edge[0]) == nodes.end()) {
+            nodes[edge[0]] = std::make_unique<Node>(edge[0]);
+            nodes_count++;
+        }
+
+        if (nodes.find(edge[1]) == nodes.end()) {
+            nodes[edge[1]] = std::make_unique<Node>(edge[1]);
+            nodes_count++;
+        }
+    }
+    long double prev_value = 1.0 / (float) nodes_count;
+
+    for (auto &node: nodes) {
+        node.second->setPrevValue(prev_value);
+        for (auto &edge: edges) {
+            if (edge[0] == node.first) {
+                node.second->addChild();
+            }
+            if (edge[1] == node.first) {
+                node.second->addParent(nodes[edge[0]].get());
+            }
+        }
+    }
+    for(int i = 0; i < 100; i++) {
+        cout << "Iteration: " << i << endl;
+        for (auto &node: nodes) {
+            node.second->recalculate();
+        }
+
+        for (auto &node: nodes) {
+            node.second->step();
+        }
+    }
+
+    for (auto &node: nodes) {
+        cout << "_________"  << endl << "Node name: " << node.second->name << endl << "parents : " << node.second->getParents() << endl << "clildrens : " << node.second->children_number << endl << "prev_value : " << node.second->prev_value << endl;
+    }
+
     return 0;
+
 }
