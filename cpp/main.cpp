@@ -96,8 +96,22 @@ vector<vector<string>> parseEdgesCSV(const string &filePath) {
     return edges;
 }
 
+void saveNodesCSV(const string &filePath, const std::map<std::string, std::unique_ptr<Node>> &nodes) {
+    ofstream file(filePath);
+    file << "Id;Label;Weight" << endl;
+    if (file.is_open()) {
+        for (const auto &node: nodes) {
+            file << node.first << ";" << node.first << ";" << node.second->prev_value << endl;
+        }
+        file.close();
+    } else {
+        cerr << "Unable to open file: " << filePath << endl;
+    }
+}
+
+
 int main() {
-    vector<vector<string>> edges = parseEdgesCSV("../data/test.csv");
+    vector<vector<string>> edges = parseEdgesCSV("../data/edges.csv");
 
     std::map<std::string, std::unique_ptr<Node>> nodes;
 
@@ -128,6 +142,7 @@ int main() {
             }
         }
     }
+
     for(int i = 0; i < 100; i++) {
         cout << "Iteration: " << i << endl;
         for (auto &node: nodes) {
@@ -139,9 +154,11 @@ int main() {
         }
     }
 
-    for (auto &node: nodes) {
-        cout << "_________"  << endl << "Node name: " << node.second->name << endl << "parents : " << node.second->getParents() << endl << "clildrens : " << node.second->children_number << endl << "prev_value : " << node.second->prev_value << endl;
-    }
+    saveNodesCSV("../data/nodes_w_W1.csv", nodes);
+
+//    for (auto &node: nodes) {
+//        cout << "_________"  << endl << "Node name: " << node.second->name << endl << "parents : " << node.second->getParents() << endl << "clildrens : " << node.second->children_number << endl << "prev_value : " << node.second->prev_value << endl;
+//    }
 
     return 0;
 
