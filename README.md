@@ -31,4 +31,4 @@ Page Runk written on C++ with OpenMP
 ---
 
 
-![img.png](img.png)
+![img.png](assets/Graph.png)
