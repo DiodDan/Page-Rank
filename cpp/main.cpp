@@ -6,6 +6,8 @@
 #include <string>
 #include <map>
 #include <memory>
+#include <chrono>
+#include <omp.h>
 
 using namespace std;
 
@@ -53,11 +55,37 @@ public:
         this->real_value = sum;
     }
 
+    void parallelRecalculate() {
+        long double sum = 0;
+        for (auto &parent: this->parents) {
+#pragma omp critical
+            {
+                sum += parent->prev_value / parent->children_number;
+            }
+        }
+        this->real_value = sum;
+    }
+
     void step() {
         this->prev_value = this->real_value;
         this->real_value = 0;
     }
 };
+
+
+template<typename F, typename... Args>
+auto measureExecutionTime(F func, string comment, Args &&... args) -> decltype(func(args...)) {
+    auto start = std::chrono::high_resolution_clock::now();
+
+    auto result = func(std::forward<Args>(args)...);
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> duration = end - start;
+
+    std::cout << "Execution time for " + comment + " : " << duration.count() << " milliseconds" << std::endl;
+
+    return result;
+}
 
 vector<string> splitString(const string &str, char delimiter = ' ') {
     vector<string> tokens;
@@ -110,9 +138,8 @@ void saveNodesCSV(const string &filePath, const std::map<std::string, std::uniqu
 }
 
 
-int main() {
-    vector<vector<string>> edges = parseEdgesCSV("../data/edges.csv");
-
+std::map<std::string, std::unique_ptr<Node>>
+pageRank(const std::vector<std::vector<std::string>> &edges, int iterations = 100, bool verbose = false) {
     std::map<std::string, std::unique_ptr<Node>> nodes;
 
     uint64_t nodes_count = 0;
@@ -143,8 +170,9 @@ int main() {
         }
     }
 
-    for(int i = 0; i < 100; i++) {
-        cout << "Iteration: " << i << endl;
+    for (int i = 0; i < iterations; i++) {
+        if (verbose)
+            cout << "Iteration: " << i << endl;
         for (auto &node: nodes) {
             node.second->recalculate();
         }
@@ -153,11 +181,94 @@ int main() {
             node.second->step();
         }
     }
+    return nodes;
+}
 
-    saveNodesCSV("../data/nodes_w_W1.csv", nodes);
+std::map<std::string, std::unique_ptr<Node>>
+parallelPageRank(const std::vector<std::vector<std::string>> &edges,
+                 int iterations = 100,
+                 bool verbose = false,
+                 int threads = 4) {
+    omp_set_num_threads(threads);
+    std::map<std::string, std::unique_ptr<Node>> nodes;
+
+    uint64_t nodes_count = 0;
+
+
+    for (auto &edge: edges) {
+        if (nodes.find(edge[0]) == nodes.end()) {
+            nodes[edge[0]] = std::make_unique<Node>(edge[0]);
+            nodes_count++;
+        }
+
+        if (nodes.find(edge[1]) == nodes.end()) {
+            nodes[edge[1]] = std::make_unique<Node>(edge[1]);
+            nodes_count++;
+        }
+    }
+    long double start_value = 1.0 / (float) nodes_count;
+
+    vector<string> node_names;
+    node_names.reserve(nodes.size());
+    for (auto &node: nodes)
+        node_names.push_back(node.first);
+
+#pragma omp parallel for default(none) shared(nodes, node_names, edges, start_value)
+    for (int node_name_index = 0; node_name_index < node_names.size(); node_name_index++) {
+        nodes[node_names[node_name_index]].get()->setPrevValue(start_value);
+#pragma omp parallel for default(none) shared(nodes, edges, node_name_index, node_names) // ask about usability
+        for (int edge_index = 0; edge_index < edges.size(); edge_index++) {
+            if (edges[edge_index][0] == node_names[node_name_index])
+                nodes[node_names[node_name_index]].get()->addChild();
+
+            if (edges[edge_index][1] == node_names[node_name_index])
+                nodes[node_names[node_name_index]].get()->addParent(nodes[edges[edge_index][0]].get());
+        }
+    }
+
+
+    for (int i = 0; i < iterations; i++) {
+        if (verbose)
+            cout << "Iteration: " << i << endl;
+#pragma omp parallel for default(none) shared(nodes, node_names)
+        for (int node_name_index = 0; node_name_index < node_names.size(); node_name_index++) {
+            nodes[node_names[node_name_index]].get()->recalculate();
+        }
+
+#pragma omp parallel for default(none) shared(nodes, node_names)
+        for (int node_name_index = 0; node_name_index < node_names.size(); node_name_index++) {
+            nodes[node_names[node_name_index]].get()->step();
+        }
+    }
+    return nodes;
+}
+
+
+int main() {
+    vector<vector<string>> edges = parseEdgesCSV("../data/edges.csv");
+    cout << "Starting calculations" << endl;
+    std::map<std::string, std::unique_ptr<Node>> nodes = measureExecutionTime(parallelPageRank, "Parallel", edges, 100,
+                                                                              false, 10);
+    std::map<std::string, std::unique_ptr<Node>> nodes1 = measureExecutionTime(pageRank, "Serial", edges, 100, false);
+
+    vector<string> node_names;
+    node_names.reserve(nodes.size());
+    for (auto &node: nodes)
+        node_names.push_back(node.first);
+
+    for (const auto &node_name: node_names) {
+        if (nodes[node_name]->prev_value != nodes1[node_name]->prev_value) {
+            cout << "Error in node: " << node_name << " prev_value: " << nodes[node_name]->prev_value << " != "
+                 << nodes1[node_name]->prev_value << endl;
+        }
+    }
+
+//    saveNodesCSV("../data/nodes_w_W2.csv", nodes);
 
 //    for (auto &node: nodes) {
-//        cout << "_________"  << endl << "Node name: " << node.second->name << endl << "parents : " << node.second->getParents() << endl << "clildrens : " << node.second->children_number << endl << "prev_value : " << node.second->prev_value << endl;
+//        cout << "_________" << endl << "Node name: " << node.second->name << endl << "parents : "
+//             << node.second->getParents() << endl << "clildrens : " << node.second->children_number << endl
+//             << "prev_value : " << node.second->prev_value << endl;
 //    }
 
     return 0;
