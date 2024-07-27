@@ -8,6 +8,8 @@
 #include <memory>
 #include <chrono>
 #include <omp.h>
+#include <iomanip>
+#include <numeric>
 
 using namespace std;
 
@@ -57,12 +59,12 @@ public:
 
     void parallelRecalculate() {
         long double sum = 0;
-        for (auto &parent: this->parents) {
-#pragma omp critical
-            {
-                sum += parent->prev_value / parent->children_number;
-            }
+
+#pragma omp parallel for reduction(+:sum)
+        for (size_t i = 0; i < parents.size(); ++i) {
+            sum += parents[i]->prev_value / parents[i]->children_number;
         }
+
         this->real_value = sum;
     }
 
@@ -86,6 +88,8 @@ auto measureExecutionTime(F func, string comment, Args &&... args) -> decltype(f
 
     return result;
 }
+
+
 
 vector<string> splitString(const string &str, char delimiter = ' ') {
     vector<string> tokens;
@@ -215,14 +219,15 @@ parallelPageRank(const std::vector<std::vector<std::string>> &edges,
 
 #pragma omp parallel for default(none) shared(nodes, node_names, edges, start_value)
     for (int node_name_index = 0; node_name_index < node_names.size(); node_name_index++) {
-        nodes[node_names[node_name_index]].get()->setPrevValue(start_value);
+        nodes[node_names[node_name_index]]->setPrevValue(start_value);
+
 #pragma omp parallel for default(none) shared(nodes, edges, node_name_index, node_names) // ask about usability
         for (int edge_index = 0; edge_index < edges.size(); edge_index++) {
             if (edges[edge_index][0] == node_names[node_name_index])
-                nodes[node_names[node_name_index]].get()->addChild();
+                nodes[node_names[node_name_index]]->addChild();
 
             if (edges[edge_index][1] == node_names[node_name_index])
-                nodes[node_names[node_name_index]].get()->addParent(nodes[edges[edge_index][0]].get());
+                nodes[node_names[node_name_index]]->addParent(nodes[edges[edge_index][0]].get());
         }
     }
 
@@ -232,7 +237,7 @@ parallelPageRank(const std::vector<std::vector<std::string>> &edges,
             cout << "Iteration: " << i << endl;
 #pragma omp parallel for default(none) shared(nodes, node_names)
         for (int node_name_index = 0; node_name_index < node_names.size(); node_name_index++) {
-            nodes[node_names[node_name_index]].get()->recalculate();
+            nodes[node_names[node_name_index]].get()->parallelRecalculate();
         }
 
 #pragma omp parallel for default(none) shared(nodes, node_names)
@@ -243,25 +248,78 @@ parallelPageRank(const std::vector<std::vector<std::string>> &edges,
     return nodes;
 }
 
+void benchmarkParallelPageRank(const vector<vector<string>>& edges, int iterations, int runs, int threads) {
+    vector<double> timings;
+
+    for (int i = 0; i < runs; ++i) {
+        auto start = chrono::high_resolution_clock::now();
+
+        parallelPageRank(edges, iterations, false, threads);
+
+        auto end = chrono::high_resolution_clock::now();
+        chrono::duration<double, milli> duration = end - start;
+        timings.push_back(duration.count());
+    }
+
+    cout << setw(10) << "Run" << setw(20) << "Execution Time (ms)" << endl;
+    cout << string(30, '-') << endl;
+    for (int i = 0; i < runs; ++i) {
+        cout << setw(10) << i + 1 << setw(20) << timings[i] << endl;
+    }
+    cout << "Average execution time: " << accumulate(timings.begin(), timings.end(), 0.0) / runs << " ms" << endl;
+}
+
+
+void benchmarkRangeThreads(const vector<vector<string>>& edges, int iterations, int runs, int min_threads, int max_threads) {
+    cout << setw(10) << "Threads" << setw(20) << "Avg Time (ms)" << endl;
+    cout << string(30, '-') << endl;
+    for (int threads = min_threads; threads <= max_threads; ++threads) {
+        vector<double> timings;
+
+        for (int i = 0; i < runs; ++i) {
+            auto start = chrono::high_resolution_clock::now();
+
+            parallelPageRank(edges, iterations, false, threads);
+
+            auto end = chrono::high_resolution_clock::now();
+            chrono::duration<double, milli> duration = end - start;
+            timings.push_back(duration.count());
+        }
+
+        double avg_time = accumulate(timings.begin(), timings.end(), 0.0) / runs;
+        cout << setw(10) << threads << setw(20) << avg_time << endl;
+    }
+}
+
 
 int main() {
     vector<vector<string>> edges = parseEdgesCSV("../data/edges.csv");
     cout << "Starting calculations" << endl;
-    std::map<std::string, std::unique_ptr<Node>> nodes = measureExecutionTime(parallelPageRank, "Parallel", edges, 100,
-                                                                              false, 10);
-    std::map<std::string, std::unique_ptr<Node>> nodes1 = measureExecutionTime(pageRank, "Serial", edges, 100, false);
 
-    vector<string> node_names;
-    node_names.reserve(nodes.size());
-    for (auto &node: nodes)
-        node_names.push_back(node.first);
+    int runs = 5;
+    int iterations = 100;
+    int min_threads = 1;
+    int max_threads = 12;
 
-    for (const auto &node_name: node_names) {
-        if (nodes[node_name]->prev_value != nodes1[node_name]->prev_value) {
-            cout << "Error in node: " << node_name << " prev_value: " << nodes[node_name]->prev_value << " != "
-                 << nodes1[node_name]->prev_value << endl;
-        }
-    }
+    benchmarkRangeThreads(edges, iterations, runs, min_threads, max_threads);
+
+    return 0;
+//    cout << "Starting calculations" << endl;
+//    std::map<std::string, std::unique_ptr<Node>> nodes = measureExecutionTime(parallelPageRank, "Parallel", edges, 100,
+//                                                                              false, 10);
+//    std::map<std::string, std::unique_ptr<Node>> nodes1 = measureExecutionTime(pageRank, "Serial", edges, 100, false);
+//
+//    vector<string> node_names;
+//    node_names.reserve(nodes.size());
+//    for (auto &node: nodes)
+//        node_names.push_back(node.first);
+//
+//    for (const auto &node_name: node_names) {
+//        if (nodes[node_name]->prev_value != nodes1[node_name]->prev_value) {
+//            cout << "Error in node: " << node_name << " prev_value: " << nodes[node_name]->prev_value << " != "
+//                 << nodes1[node_name]->prev_value << endl;
+//        }
+//    }
 
 //    saveNodesCSV("../data/nodes_w_W2.csv", nodes);
 
