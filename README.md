@@ -20,15 +20,22 @@ Page Runk written on C++ with OpenMP
 
 ---
 
-## 1. [How to run](#How-to-run)
+## 1. [How to run](assets/HowToRun.md)
 
-## 2. [Structure Definitions](#Structure-Definitions)
+## 2. [Algorithm Description](assets/AlgorithmDescription.md)
 
-## 3. [Task Definitions](assets/TaskDefinitions.md)
+## 3. [Task Definition](assets/TaskDefinition.md)
 
-## 4. [Solution condition](#Solution-condition)
+## 4. [Solution condition](assets/SolutionCondition.md)
 
 ---
 
+# Here you can see graph of pages before PageRank algorithm.
 
-![img.png](assets/Graph.png)
+![UnRankedNodes](assets/UnRankedNodes.svg)
+
+---
+
+# Here you can see graph of pages after PageRank algorithm.
+
+![RankedNodes](assets/RankedNodes.svg)
