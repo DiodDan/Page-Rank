@@ -46,3 +46,20 @@ Page Runk written on C++ with OpenMP
 # Here you can see graph of pages after montecarlo PageRank algorithm.
 ## You can try looking on this graph in svg [MontecarloRankedNodes](assets/images/MontecarloRankedNodes.svg).
 ![MontecarloRankedNodes](assets/images/MontecarloRankedNodes.png)
+
+---
+
+# Here you can see the table of average iteration times with varying thread counts using Standard PageRank Algorithm.
+## This table shows the average time taken (in milliseconds) for iterations with each thread count. As the number of threads increases, the computation time generally decreases. However, at 10 threads, the time increases again, indicating potential overhead.
+| Threads | Avg Time (ms) |
+|---------|----------------|
+| 1       | 36223.1        |
+| 2       | 18765.3        |
+| 3       | 12953.7        |
+| 4       | 10118.5        |
+| 5       | 8200.73        |
+| 6       | 7764.15        |
+| 7       | 7210.95        |
+| 8       | 6617.91        |
+| 9       | 6384.74        |
+| 10      | 7895.61        |
