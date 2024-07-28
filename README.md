@@ -31,11 +31,18 @@ Page Runk written on C++ with OpenMP
 ---
 
 # Here you can see graph of pages before PageRank algorithm.
-
-![UnRankedNodes](assets/UnRankedNodes.svg)
+## You can try looking on this graph in svg [UnRankedNodes](assets/images/UnRankedNodes.svg).
+![UnRankedNodes](assets/images/UnRankedNodes.png)
 
 ---
 
 # Here you can see graph of pages after PageRank algorithm.
+## You can try looking on this graph in svg [RankedNodes](assets/images/RankedNodes.svg).
+![RankedNodes](assets/images/RankedNodes.png)
 
-![RankedNodes](assets/RankedNodes.svg)
+
+---
+
+# Here you can see graph of pages after montecarlo PageRank algorithm.
+## You can try looking on this graph in svg [MontecarloRankedNodes](assets/images/MontecarloRankedNodes.svg).
+![MontecarloRankedNodes](assets/images/MontecarloRankedNodes.png)

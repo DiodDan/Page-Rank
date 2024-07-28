@@ -12,7 +12,7 @@
 
 ### Imagine we have graph of pages looking like that.
 
-![img_1.png](img_1.png)
+![img_1.png](images/img_1.png)
 
 ### Now let's create table, it will look like that.
 
@@ -54,7 +54,7 @@
 
 ### Here you can see values for connections between pages.
 
-![img_3.png](img_3.png)
+![img_3.png](images/img_3.png)
 
 | Page | Iteration 0 | Iteration 1 | Iteration 1 | ... |
 |------|-------------|-------------|-------------|-----|
@@ -65,7 +65,7 @@
 | E    | 0.2         | 0           |             | ... |
 
 ### Now let's calculate the third iteration.
-![img_4.png](img_4.png)
+![img_4.png](images/img_4.png)
 
 | Page | Iteration 0 | Iteration 1 | Iteration 1 | ... |
 |------|-------------|-------------|-------------|-----|
@@ -87,5 +87,23 @@ long double real_value; // value of the node in current iteration
 vector<Node *> parents; // vector of pointers to the parent nodes
 uint32_t children_number; // amount of children
 ```
-### Also, each node has a method to calculate its value in the next iteration and a method to move the value from real_value to prev_value.
-### When we created this feature we started to implement the main algorithm. It will go as simple as running recalculate method for each node in the graph and then runing step method for each node in the graph.
+### Also, each node has a method to calculate its value in the next iteration.
+```cpp
+void recalculate() {
+        long double sum = 0; // sum of the values of the parent nodes
+        for (auto &parent: this->parents) { // here we iterate through the parent nodes
+            sum += parent->prev_value / parent->children_number; // and calculate the sum
+        }
+        this->real_value = sum;
+    }
+```
+### And a method to move the value from real_value to prev_value.
+
+```cpp
+void step() {
+        this->prev_value = this->real_value; // we swap the values
+        this->real_value = 0; // and set the real_value to 0
+    }
+```
+
+### When we created this features we started to implement the main algorithm. It will go as simple as running recalculate method for each node in the graph and then runing step method for each node in the graph.

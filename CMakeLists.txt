@@ -9,4 +9,4 @@ if (OpenMP_CXX_FOUND)
     link_libraries(OpenMP::OpenMP_CXX)
 endif()
 
-add_executable(Page-Rank cpp/main.cpp)
+add_executable(Page-Rank cpp/montecarlo.cpp)
