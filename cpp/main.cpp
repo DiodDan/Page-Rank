@@ -1,22 +1,11 @@
-#include <iostream>
-#include <vector>
-#include <string>
+#include "montecarlo.cpp"
 #include "standard.cpp"
 
 using namespace std;
 
-
 int main() {
-    vector<vector<string>> edges = parseEdgesCSV("../data/edges.csv");
-    cout << "Starting calculations" << endl;
-
-    int runs = 5;
-    int iterations = 100;
-    int min_threads = 1;
-    int max_threads = 12;
-
-    benchmarkRangeThreads(edges, iterations, runs, min_threads, max_threads);
-
+    benchmarkStandard();
+    benchmarkMontecarlo();
     return 0;
 //    cout << "Starting calculations" << endl;
 //    std::map<std::string, std::unique_ptr<Node>> nodes = measureExecutionTime(parallelPageRank, "Parallel", edges, 100,

@@ -293,3 +293,15 @@ void benchmarkRangeThreads(const vector<vector<string>> &edges,
         cout << setw(10) << threads << setw(20) << avg_time << endl;
     }
 }
+
+void benchmarkStandard(){
+    vector<vector<string>> edges = parseEdgesCSV("../data/edges.csv");
+    cout << "Starting calculations for standart" << endl;
+
+    int runs = 5;
+    int iterations = 100;
+    int min_threads = 1;
+    int max_threads = 12;
+
+    benchmarkRangeThreads(edges, iterations, runs, min_threads, max_threads);
+}
