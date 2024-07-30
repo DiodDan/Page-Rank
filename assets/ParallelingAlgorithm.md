@@ -19,6 +19,7 @@
 | 9       | 6384.74       |
 | 10      | 7895.61       |
 
+![img.png](images/img_5.png)
 ### This table shows the average time taken (in milliseconds) for iterations with each thread count. As the number of threads increases, the computation time generally decreases. However, at 10 threads, the time increases again, indicating potential overhead.
 
 ---
@@ -35,6 +36,8 @@
 | 6       | 18315.1       |
 | 7       | 19039.4       |
 | 8       | 19224.7       |
+
+![img.png](images/img_6.png)
 
 ### Same we can see here, from 6 threads the time starts to increase again, indicating overhead.
 
