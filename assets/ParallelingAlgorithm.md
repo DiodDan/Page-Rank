@@ -37,6 +37,7 @@
 | 7       | 19039.4       |
 | 8       | 19224.7       |
 
+
 ![img.png](images/img_6.png)
 
 ### Same we can see here, from 6 threads the time starts to increase again, indicating overhead.
