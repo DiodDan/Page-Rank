@@ -1,5 +1,5 @@
 # Page-Rank
-Page Runk written on C++ with OpenMP
+Page Rank written on C++ with OpenMP
 
 ---
 
